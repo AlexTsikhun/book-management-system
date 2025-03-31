@@ -1,0 +1,29 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./:/app
+    command: >
+      sh -c "alembic upgrade head &&
+             uvicorn main:application --host 0.0.0.0 --port 8000 --reload"
+    depends_on:
+      - db
+
+  db:
+    image: postgres:16-alpine3.17
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - "5432:5432"
+    volumes:
+      - my_db:/var/lib/postgresql/data
+
+volumes:
+  my_db:
