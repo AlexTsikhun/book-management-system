@@ -73,17 +73,3 @@ class PostgresRepository(AbstractRepository):
         )
         result = await self.uow.session.execute(query, {"offset": offset, "limit": limit})
         return result.fetchall()
-
-    # Додатковий метод для специфічних випадків (наприклад, join з authors)
-    async def get_books_with_authors(self, offset: int, limit: int, sort_by: str) -> List[Dict]:
-        query = text(
-            f"""
-            SELECT b.*, a.name as author_name
-            FROM {self.table_name} b
-            JOIN authors a ON b.author_id = a.id
-            ORDER BY {sort_by}
-            OFFSET :offset LIMIT :limit
-        """
-        )
-        result = await self.uow.session.execute(query, {"offset": offset, "limit": limit})
-        return result.fetchall()

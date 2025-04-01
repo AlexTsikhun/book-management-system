@@ -20,7 +20,7 @@ class AbstractRepository(abc.ABC):
 
 
 class AbstractUnitOfWork(abc.ABC):
-    shops: AbstractRepository
+    books: AbstractRepository
 
     @abc.abstractmethod
     async def __aenter__(self):

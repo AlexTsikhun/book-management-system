@@ -1,11 +1,11 @@
 from typing import Any
 
 from exceptions import DoesNotExistError
-from repositories.postgres.container import PostgresUnitOfWork
+from repositories.base import AbstractUnitOfWork
 
 
 class BaseBooksUseCase:
-    def __init__(self, uow: PostgresUnitOfWork) -> None:
+    def __init__(self, uow: AbstractUnitOfWork) -> None:
         self.uow = uow
 
 
@@ -73,10 +73,11 @@ class UpdateBookUseCase(BaseBooksUseCase):
 
 
 class DeleteBookUseCase(BaseBooksUseCase):
-    async def __call__(self, book_id: int) -> bool:
+    async def __call__(self, book_id: int) -> None:
         async with self.uow:
             book = await self.uow.books.retrieve(book_id)
+
             if not book:
                 raise DoesNotExistError()
 
-            return await self.uow.books.delete(book)
+            await self.uow.books.delete(book.id)
