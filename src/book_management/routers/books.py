@@ -1,8 +1,14 @@
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 
 from book_management.schemas.books import BookCreateSchema, BookResponseSchema
-from book_management.use_cases.books import CreateBookUseCase, RetrieveBooksUseCase
+from book_management.use_cases.books import (
+    CreateBookUseCase,
+    DeleteBookUseCase,
+    RetrieveBooksUseCase,
+    RetrieveBookUseCase,
+    UpdateBookUseCase,
+)
 from dependencies import get_unit_of_work
 
 router = APIRouter(prefix="/books", tags=["books"])
@@ -10,7 +16,6 @@ router = APIRouter(prefix="/books", tags=["books"])
 
 @router.get("/", response_model=list[BookResponseSchema])
 async def retrieve_books(
-    request: Request,
     page: int = 1,
     per_page: int = 10,
     sort_by: str = "title",
@@ -23,10 +28,36 @@ async def retrieve_books(
 
 @router.post("/", response_model=BookResponseSchema)
 async def create_book(
-    request: Request,
     book_data: BookCreateSchema,
     uow=Depends(get_unit_of_work),
 ):
     use_case = CreateBookUseCase(uow)
-    created_book = await use_case(book_data.model_dump())
-    return JSONResponse(content=created_book)
+    return await use_case(book_data.model_dump())
+
+
+@router.get("/{book_id}", response_model=BookResponseSchema)
+async def retrieve_book(
+    book_id: int,
+    uow=Depends(get_unit_of_work),
+):
+    use_case = RetrieveBookUseCase(uow)
+    return await use_case(book_id)
+
+
+@router.put("/{book_id}", response_model=BookResponseSchema)
+async def update_book(
+    book_id: int,
+    book_data: BookResponseSchema,
+    uow=Depends(get_unit_of_work),
+):
+    use_case = UpdateBookUseCase(uow)
+    return await use_case(book_id, book_data.model_dump())
+
+
+@router.delete("/{book_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_book(
+    book_id: int,
+    uow=Depends(get_unit_of_work),
+):
+    use_case = DeleteBookUseCase(uow)
+    return await use_case(book_id)
