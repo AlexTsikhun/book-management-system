@@ -1,5 +1,6 @@
 from sqlalchemy import text
 
+from auth.models import User
 from book_management.models import Author, Book
 from repositories.postgres.repository import PostgresRepository
 
@@ -45,3 +46,17 @@ class AuthorsRepository(PostgresRepository):
         query = text(f"SELECT * FROM {self.table_name} WHERE name = ANY(:names)")
         result = await self.uow.session.execute(query, {"names": author_names})
         return result.fetchall()
+
+
+class UsersRepository(PostgresRepository):
+    model_class = User
+
+    async def retrieve_by_username(self, username: str):
+        query = text(f"SELECT * FROM {self.table_name} WHERE username = :username")
+        result = await self.uow.session.execute(query, {"username": username})
+        return result.fetchone()
+    
+    async def retrieve_by_email(self, email: str):
+        query = text(f"SELECT * FROM {self.table_name} WHERE email = :email")
+        result = await self.uow.session.execute(query, {"email": email})
+        return result.fetchone()

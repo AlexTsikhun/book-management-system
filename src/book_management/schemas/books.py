@@ -12,11 +12,11 @@ class BaseBookSchema(BaseModel):
 
 class BookCreateSchema(BaseBookSchema):
     @field_validator("published_year")
-    def validate_year(cls, v):
+    def validate_year(cls, year: int):
         current_year = datetime.now().year
-        if not 1800 <= v <= current_year:
+        if not 1800 <= year <= current_year:
             raise ValueError(f"Year must be between 1800 and {current_year}")
-        return v  # ?
+        return year
 
 
 class BookResponseSchema(BaseBookSchema):

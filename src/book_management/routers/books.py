@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 
+from auth.schemas import UserResponse
+from auth.services import get_active_current_user
 from book_management.schemas.books import BookBulkImportResponse, BookCreateSchema, BookResponseSchema
 from book_management.use_cases.books import (
     BulkImportBooksUseCase,
@@ -9,7 +11,7 @@ from book_management.use_cases.books import (
     RetrieveBookUseCase,
     UpdateBookUseCase,
 )
-from dependencies import get_unit_of_work
+from dependencies import get_current_user, get_unit_of_work
 
 router = APIRouter(prefix="/books", tags=["books"])
 
@@ -30,6 +32,7 @@ async def retrieve_books(
 async def create_book(
     book_data: BookCreateSchema,
     uow=Depends(get_unit_of_work),
+    current_user: UserResponse = Depends(get_current_user),
 ):
     use_case = CreateBookUseCase(uow)
     return await use_case(book_data.model_dump())
@@ -49,6 +52,7 @@ async def update_book(
     book_id: int,
     book_data: BookResponseSchema,
     uow=Depends(get_unit_of_work),
+    current_user: UserResponse = Depends(get_current_user),
 ):
     use_case = UpdateBookUseCase(uow)
     return await use_case(book_id, book_data.model_dump())
@@ -58,6 +62,7 @@ async def update_book(
 async def delete_book(
     book_id: int,
     uow=Depends(get_unit_of_work),
+    current_user: UserResponse = Depends(get_current_user),
 ):
     use_case = DeleteBookUseCase(uow)
     return await use_case(book_id)
@@ -67,6 +72,7 @@ async def delete_book(
 async def bulk_import_books(
     file: UploadFile = File(...),
     uow=Depends(get_unit_of_work),
+    current_user: UserResponse = Depends(get_current_user),
 ):
     if file.content_type not in ["text/csv", "application/json"]:
         raise HTTPException(status_code=400, detail="Please ensure the file is in JSON or CSV format.")

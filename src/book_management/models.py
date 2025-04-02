@@ -26,7 +26,7 @@ class Book(Base):
     __tablename__ = "books"
     id = Column(Integer, primary_key=True)
     title = Column(String, nullable=False)
-    author_id = Column(Integer, ForeignKey("authors.id"), nullable=False)  # ?
+    author_id = Column(Integer, ForeignKey("authors.id"), nullable=False)
     genre = Column(Enum(GenreEnum), nullable=False)
     published_year = Column(Integer, nullable=False)
 

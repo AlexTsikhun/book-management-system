@@ -21,19 +21,29 @@ class CreateBookUseCase(BaseBooksUseCase):
     async def __call__(self, book_data: dict) -> dict[str, Any]:
         async with self.uow:
             author_name = book_data["author_name"]
-            author_id = await self.uow.authors.retrieve_by_author_name(author_name)
+            author_id = await self.uow.authors.retrieve_by_name(author_name)
+            print("author_id 11111111", author_id, type(author_id))
 
             if not author_id:
-                raise DoesNotExistError()
+                author_id = await self.uow.authors.create({"name": author_name})
+            print("author_id 22222222", author_id, type(author_id))
 
-            return await self.uow.books.create(
+            book = await self.uow.books.create(
                 {
                     "title": book_data["title"],
-                    "author_id": author_id["id"],  # ?
-                    "genre": book_data["genre"],
+                    "author_id": author_id.id,  # ?
+                    "genre": book_data["genre"].upper(),
                     "published_year": book_data["published_year"],
                 }
             )
+
+            return {
+                "id": book.id,
+                "title": book.title,
+                "author_name": author_id.name,
+                "genre": book.genre,
+                "published_year": book.published_year,
+            }
 
 
 class RetrieveBookUseCase(BaseBooksUseCase):
@@ -43,27 +53,39 @@ class RetrieveBookUseCase(BaseBooksUseCase):
 
             if not book:
                 raise DoesNotExistError()
-            return book
+                
+            return {
+                "id": book.id,
+                "title": book.title,
+                "author_name": book.author.name,
+                "genre": book.genre,
+                "published_year": book.published_year,
+            } 
 
 
 class UpdateBookUseCase(BaseBooksUseCase):
     async def __call__(self, book_id: int, book_data: dict) -> dict[str, Any] | None:
+
         async with self.uow:
-            # If author_name is provided, get or create author
-            if "author_name" in book_data:
-                author_name = book_data.pop("author_name")
-                author_id = await self.uow.authors.retrieve_by_author_name(author_name)
+            author_name = book_data["author_name"]
+            author = await self.uow.authors.retrieve_by_name(author_name)
 
-                if not author_id:
-                    raise DoesNotExistError()
+            if not author:
+                raise DoesNotExistError()
 
-                book_data["author_id"] = author_id["id"]
+            book_data["author_id"] = author.id
 
             updated_book = await self.uow.books.update(book_id, book_data)
             if not updated_book:
                 raise DoesNotExistError()
 
-            return updated_book
+            return {
+                "id": updated_book.id,
+                "title": updated_book.title,
+                "author_name": author.name,
+                "genre": updated_book.genre,
+                "published_year": updated_book.published_year,
+            }
 
 
 class DeleteBookUseCase(BaseBooksUseCase):
