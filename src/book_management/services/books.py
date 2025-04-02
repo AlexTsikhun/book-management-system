@@ -1,16 +1,16 @@
 import csv
 import json
 from io import StringIO
-from typing import Any, Dict, List, Protocol
+from typing import Any, Protocol
 
 
 class FileParser(Protocol):
-    def parse(self, content: str) -> List[Dict[str, Any]]:
+    def parse(self, content: str) -> list[dict[str, Any]]:
         pass
 
 
 class JSONFileParser:
-    def parse(self, content: str) -> List[Dict[str, Any]]:
+    def parse(self, content: str) -> list[dict[str, Any]]:
         data = json.loads(content)
         if not isinstance(data, list):
             raise ValueError("JSON content must be an array of books")
@@ -18,7 +18,7 @@ class JSONFileParser:
 
 
 class CSVFileParser:
-    def parse(self, content: str) -> List[Dict[str, Any]]:
+    def parse(self, content: str) -> list[dict[str, Any]]:
         books = []
         csv_file = StringIO(content)
         reader = csv.DictReader(csv_file)

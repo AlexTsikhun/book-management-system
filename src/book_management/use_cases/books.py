@@ -6,7 +6,7 @@ from repositories.base import AbstractUnitOfWork
 
 
 class BaseBooksUseCase:
-    def __init__(self, uow: AbstractUnitOfWork) -> None:
+    def __init__(self, uow: AbstractUnitOfWork) -> None:  # ?
         self.uow = uow
 
 
@@ -90,33 +90,46 @@ class BulkImportBooksUseCase(BaseBooksUseCase):
 
             imported_books = []
             failed_info = []
+            required_fields = ["title", "author_name", "genre", "published_year"]
 
+            valid_books_data = []
+            author_names = set()
             for book_data in books_data:
-                required_fields = ["title", "author_name", "genre", "published_year"]
                 if not all(field in book_data for field in required_fields):
                     missing_fields = [f for f in required_fields if f not in book_data]
                     failed_info.append(
                         {"data": book_data, "error": f"Missing required fields: {', '.join(missing_fields)}"}
                     )
                     continue
+                valid_books_data.append(book_data)
+                author_names.add(book_data["author_name"])
 
-                author_name = book_data["author_name"]
-                author = await self.uow.authors.retrieve_by_author_name(author_name)
+            if not valid_books_data:
+                return {
+                    "total_items": len(books_data),
+                    "successful": 0,
+                    "failed": len(failed_info),
+                    "failed_info": failed_info,
+                }
 
-                if not author:
-                    author = await self.uow.authors.create({"name": author_name})
-                else:
-                    author = await self.uow.authors.retrieve(author.id)
+            existing_authors = await self.uow.authors.retrieve_by_names(list(author_names))
+            author_map = {author.name: author for author in existing_authors}
 
-                book = await self.uow.books.create(
-                    {
-                        "title": book_data["title"],
-                        "author_id": author.id,
-                        "genre": book_data["genre"].upper(),
-                        "published_year": book_data["published_year"],
-                    }
-                )
-                imported_books.append(book)
+            new_author_names = author_names - set(author_map.keys())
+            if new_author_names:
+                new_authors = await self.uow.authors.bulk_create([{"name": name} for name in new_author_names])
+                author_map.update({author.name: author for author in new_authors})
+
+            books_to_create = [
+                {
+                    "title": book_data["title"],
+                    "author_id": author_map[book_data["author_name"]].id,
+                    "genre": book_data["genre"].upper(),
+                    "published_year": book_data["published_year"],
+                }
+                for book_data in valid_books_data
+            ]
+            imported_books = await self.uow.books.bulk_create(books_to_create)
 
             return {
                 "total_items": len(books_data),

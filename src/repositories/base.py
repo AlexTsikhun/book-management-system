@@ -21,6 +21,7 @@ class AbstractRepository(abc.ABC):
 
 class AbstractUnitOfWork(abc.ABC):
     books: AbstractRepository
+    authors: AbstractRepository
 
     @abc.abstractmethod
     async def __aenter__(self):

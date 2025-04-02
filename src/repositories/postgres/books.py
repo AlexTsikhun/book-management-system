@@ -36,7 +36,12 @@ class BooksRepository(PostgresRepository):
 class AuthorsRepository(PostgresRepository):
     model_class = Author
 
-    async def retrieve_by_author_name(self, author_name: str):
+    async def retrieve_by_name(self, author_name: str):
         query = text(f"SELECT * FROM {self.table_name} WHERE name = :name")
         result = await self.uow.session.execute(query, {"name": author_name})
         return result.fetchone()
+
+    async def retrieve_by_names(self, author_names: list[str]):
+        query = text(f"SELECT * FROM {self.table_name} WHERE name = ANY(:names)")
+        result = await self.uow.session.execute(query, {"names": author_names})
+        return result.fetchall()
