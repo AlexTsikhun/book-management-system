@@ -10,3 +10,11 @@ class BaseDetailException(Exception):
 
 class DoesNotExistError(BaseDetailException):
     default_detail = "Not found."
+
+
+class ValidationError(Exception):
+    """Input data validation failed."""
+
+    def __init__(self, field: str, messages: list[str]) -> None:
+        self.field = field
+        self.messages = messages

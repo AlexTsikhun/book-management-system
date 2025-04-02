@@ -1,6 +1,7 @@
 from typing import Any
 
-from exceptions import DoesNotExistError
+from book_management.services.books import FileParserFactory
+from exceptions import DoesNotExistError, ValidationError
 from repositories.base import AbstractUnitOfWork
 
 
@@ -13,13 +14,7 @@ class RetrieveBooksUseCase(BaseBooksUseCase):
     async def __call__(self, page: int, per_page: int, sort_by: str) -> dict[str, Any]:
         async with self.uow:
             books_data = await self.uow.books.get_all(offset=(page - 1) * per_page, limit=per_page, sort_by=sort_by)
-            return {
-                "books": books_data,
-                "pagination": {
-                    "page": page,
-                    "per_page": per_page,
-                },
-            }
+            return books_data
 
 
 class CreateBookUseCase(BaseBooksUseCase):
@@ -48,7 +43,6 @@ class RetrieveBookUseCase(BaseBooksUseCase):
 
             if not book:
                 raise DoesNotExistError()
-
             return book
 
 
@@ -81,3 +75,52 @@ class DeleteBookUseCase(BaseBooksUseCase):
                 raise DoesNotExistError()
 
             await self.uow.books.delete(book.id)
+
+
+class BulkImportBooksUseCase(BaseBooksUseCase):
+    async def __call__(self, file_content: str, filename: str) -> dict[str, Any]:
+        async with self.uow:
+            parser = FileParserFactory.get_parser(filename)
+            try:
+                books_data = parser.parse(file_content)
+            except ValueError as error:
+                raise ValidationError("file", f"File parsing error: {str(error)}")
+            except TypeError:
+                raise ValidationError("file", "Missing required field")
+
+            imported_books = []
+            failed_info = []
+
+            for book_data in books_data:
+                required_fields = ["title", "author_name", "genre", "published_year"]
+                if not all(field in book_data for field in required_fields):
+                    missing_fields = [f for f in required_fields if f not in book_data]
+                    failed_info.append(
+                        {"data": book_data, "error": f"Missing required fields: {', '.join(missing_fields)}"}
+                    )
+                    continue
+
+                author_name = book_data["author_name"]
+                author = await self.uow.authors.retrieve_by_author_name(author_name)
+
+                if not author:
+                    author = await self.uow.authors.create({"name": author_name})
+                else:
+                    author = await self.uow.authors.retrieve(author.id)
+
+                book = await self.uow.books.create(
+                    {
+                        "title": book_data["title"],
+                        "author_id": author.id,
+                        "genre": book_data["genre"].upper(),
+                        "published_year": book_data["published_year"],
+                    }
+                )
+                imported_books.append(book)
+
+            return {
+                "total_items": len(books_data),
+                "successful": len(imported_books),
+                "failed": len(failed_info),
+                "failed_info": failed_info,
+            }

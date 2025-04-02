@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Depends, status
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 
-from book_management.schemas.books import BookCreateSchema, BookResponseSchema
+from book_management.schemas.books import BookBulkImportResponse, BookCreateSchema, BookResponseSchema
 from book_management.use_cases.books import (
+    BulkImportBooksUseCase,
     CreateBookUseCase,
     DeleteBookUseCase,
     RetrieveBooksUseCase,
@@ -23,7 +23,7 @@ async def retrieve_books(
 ):
     use_case = RetrieveBooksUseCase(uow)
     books_data = await use_case(page=page, per_page=per_page, sort_by=sort_by)
-    return JSONResponse(content=books_data)
+    return books_data
 
 
 @router.post("/", response_model=BookResponseSchema)
@@ -61,3 +61,18 @@ async def delete_book(
 ):
     use_case = DeleteBookUseCase(uow)
     return await use_case(book_id)
+
+
+@router.post("/bulk-import", response_model=BookBulkImportResponse)
+async def bulk_import_books(
+    file: UploadFile = File(...),
+    uow=Depends(get_unit_of_work),
+):
+    if file.content_type not in ["text/csv", "application/json"]:
+        raise HTTPException(status_code=400, detail="Please ensure the file is in JSON or CSV format.")
+
+    content = await file.read()
+    file_content = content.decode()
+
+    use_case = BulkImportBooksUseCase(uow)
+    return await use_case(file_content, file.filename)
