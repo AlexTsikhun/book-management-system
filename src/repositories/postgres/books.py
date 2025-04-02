@@ -20,7 +20,7 @@ class BooksRepository(PostgresRepository):
         result = await self.uow.session.execute(query, {"id": reference})
         return result.fetchone()
 
-    async def get_all(self, offset: int, limit: int, sort_by: str) -> list[dict]:
+    async def get_all(self, offset: int, limit: int , sort_by: str = "id") -> list[dict]:
         query = text(
             f"""
                 SELECT b.id, b.title, a.name AS author_name, b.genre, b.published_year

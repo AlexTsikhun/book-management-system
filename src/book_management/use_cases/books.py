@@ -1,6 +1,10 @@
+import csv
+from io import StringIO
+import json
 from typing import Any
 
-from book_management.services.books import FileParserFactory
+from book_management.models import GenreEnum
+from book_management.services.books import FileExporterFactory, FileParserFactory
 from exceptions import DoesNotExistError, ValidationError
 from repositories.base import AbstractUnitOfWork
 
@@ -159,3 +163,23 @@ class BulkImportBooksUseCase(BaseBooksUseCase):
                 "failed": len(failed_info),
                 "failed_info": failed_info,
             }
+
+class ExportBooksUseCase(BaseBooksUseCase):
+    async def __call__(self, format: str) :
+        async with self.uow:
+            books = await self.uow.books.get_all(offset=0, limit=1000)
+            print("books88888888888", books)
+
+            books_data = [
+                {
+                    "id": book.id,
+                    "title": book.title,
+                    "author_name": book.author_name,
+                    "genre": book.genre.value if isinstance(book.genre, GenreEnum) else book.genre,
+                    "published_year": book.published_year,
+                }
+                for book in books
+            ]
+
+            exporter = FileExporterFactory.get_exporter(format)
+            return exporter.export(books_data)

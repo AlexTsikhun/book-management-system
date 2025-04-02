@@ -3,6 +3,7 @@ import json
 from io import StringIO
 from typing import Any, Protocol
 
+# Prefer Single Responsibility Principle (keep 2 classes) over DRY in this approach (2 methods in 1 class)
 
 class FileParser(Protocol):
     def parse(self, content: str) -> list[dict[str, Any]]:
@@ -42,3 +43,36 @@ class FileParserFactory:
             if filename.endswith(ext):
                 return parser_class()
         raise ValueError("Unsupported file format. Use JSON or CSV")
+
+
+class FileExporter(Protocol):
+    def export(self, data: list[dict]) -> str:
+        pass
+
+class JSONExporter(FileExporter):
+    def export(self, books_data: list[dict]) -> str:
+        return json.dumps(books_data, indent=2)
+
+class CSVExporter(FileExporter):
+    def export(self, data: list[dict]) -> str:
+        output = StringIO()
+        writer = csv.DictWriter(
+            output,
+            fieldnames=["id", "title", "author_name", "genre", "published_year"],
+        )
+        writer.writeheader()
+        writer.writerows(data)
+        return output.getvalue()
+
+class FileExporterFactory:
+    _exporters = {
+        "json": JSONExporter(),
+        "csv": CSVExporter()
+    }
+
+    @classmethod
+    def get_exporter(cls, format: str) -> FileExporter:
+        exporter = cls._exporters.get(format.lower())
+        if not exporter:
+            raise ValueError("Unsupported format. Use JSON or CSV")
+        return exporter

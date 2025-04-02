@@ -74,7 +74,7 @@ class PostgresRepository(AbstractRepository):
         result = await self.uow.session.execute(query, params)
         return result.scalars().all()
 
-    async def get_all(self, offset: int, limit: int, sort_by: str) -> list[dict]:
+    async def get_all(self, offset: int, limit: int, sort_by: str="id") -> list[dict]:
         query = text(
             f"""
             SELECT * FROM {self.table_name}
