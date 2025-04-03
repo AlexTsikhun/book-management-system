@@ -57,7 +57,7 @@ Add path to `.env` files for test configuration
 ```bash
 pytest tests/
 ```
-
+(At the moment, we are reworking the tests in order to correctly use the asynchronous test postgress database)
 
 ## Getting access
 
@@ -96,12 +96,14 @@ Swagger UI: http://localhost:8000/api/v1/docs
 
 ReDoc: http://localhost:8000/api/v1/redoc
 
-
-
 #### DB Structure:
 
 ![db_structure.png](readme_images/db_structure.png)
 
+
+Swager docs image:
+
+![swager_docs_image.png](readme_images/swager_docs_image.png)
 
 <details style="border: 1px solid #ccc; padding: 10px; margin-bottom: 10px">
 <summary style="font-size: 1.17em; font-weight: bold; ">Future work</summary>
