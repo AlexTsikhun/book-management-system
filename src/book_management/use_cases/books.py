@@ -29,11 +29,9 @@ class CreateBookUseCase(BaseBooksUseCase):
         async with self.uow:
             author_name = book_data["author_name"]
             author = await self.uow.authors.retrieve_by_name(author_name)
-            print("author_id 11111111", author, type(author))
 
             if not author:
                 author = await self.uow.authors.create({"name": author_name})
-            print("author_id 22222222", author, type(author))
 
             book = await self.uow.books.create(
                 {
@@ -146,7 +144,6 @@ class BulkImportBooksUseCase(BaseBooksUseCase):
             new_author_names = author_names - set(author_map.keys())
             if new_author_names:
                 new_authors = await self.uow.authors.bulk_create([{"name": name} for name in new_author_names])
-                print("new_authors", new_authors)
                 author_map.update({author.name: author for author in new_authors})
 
             books_to_create = [
@@ -172,7 +169,6 @@ class ExportBooksUseCase(BaseBooksUseCase):
     async def __call__(self, format: str):
         async with self.uow:
             books = await self.uow.books.get_all(offset=0, limit=1000)
-            print("books88888888888", books)
 
             books_data = [
                 {

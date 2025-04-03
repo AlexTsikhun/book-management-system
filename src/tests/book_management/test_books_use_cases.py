@@ -1,4 +1,3 @@
-import json
 from book_management.use_cases.books import (
     CreateBookUseCase,
     DeleteBookUseCase,
@@ -48,7 +47,6 @@ class CreateBookUseCaseTestCase(BaseTestCase):
     #     }
 
     #     result = await self.use_case(book_data)
-    #     print("result 9999", result)
     #     self.assertEqual(result["title"], "New Book")
     #     # self.assertEqual(result["author_id"], 1)
     #     self.assertEqual(result["genre"], "Fiction")
@@ -140,4 +138,3 @@ class DeleteBookUseCaseTestCase(BaseTestCase):
     async def test_delete_book_not_found(self):
         with self.assertRaises(DoesNotExistError):
             await self.use_case(999)
-

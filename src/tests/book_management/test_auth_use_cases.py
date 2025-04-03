@@ -1,8 +1,10 @@
 import pytest
+
 from auth.schemas import UserCreate
 from auth.use_cases import AuthenticateUserUseCase, RegisterUserUseCase
+from exceptions import DoesNotExistError, ValidationError
 from repositories.fake.containers import FakeUnitOfWork
-from exceptions import ValidationError, DoesNotExistError
+
 
 @pytest.mark.asyncio
 async def test_register_user_success():
@@ -13,6 +15,7 @@ async def test_register_user_success():
     assert result.email == "test@example.com"
     # assert hasattr(result, "id")
 
+
 @pytest.mark.asyncio
 async def test_register_user_duplicate_username():
     uow = FakeUnitOfWork()
@@ -22,8 +25,8 @@ async def test_register_user_duplicate_username():
     with pytest.raises(ValidationError) as exc:
         await use_case(user_data)
 
-    print(str(exc.value), "55555555555555555")    
     assert "Username already exists" in str(exc.value)
+
 
 @pytest.mark.asyncio
 async def test_login_success():
@@ -35,6 +38,7 @@ async def test_login_success():
     token = await login_use_case("testuser", "password123")
     assert "access_token" in token
     assert token["token_type"] == "bearer"
+
 
 @pytest.mark.asyncio
 async def test_login_invalid_credentials():
