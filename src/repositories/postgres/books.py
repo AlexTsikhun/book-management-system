@@ -20,18 +20,39 @@ class BooksRepository(PostgresRepository):
         result = await self.uow.session.execute(query, {"id": reference})
         return result.fetchone()
 
-    async def get_all(self, offset: int, limit: int , sort_by: str = "id") -> list[dict]:
+    async def get_all(
+        self, offset: int, limit: int | None, sort_field: str = "id", sort_direction: str = "asc"
+    ) -> list[dict]:
+        _sort_field_mapping = {
+            "id": "b.id",
+            "title": "b.title",
+            "published_year": "b.published_year",
+            "author": "a.name",
+        }
+
+        order_column = _sort_field_mapping.get(sort_field, "b.id")
+        order_by_clause = f"ORDER BY {order_column} {sort_direction}"
+
         query = text(
             f"""
-                SELECT b.id, b.title, a.name AS author_name, b.genre, b.published_year
+                SELECT
+                    b.id,
+                    b.title,
+                    a.name AS author_name,
+                    b.genre,
+                    b.published_year
                 FROM {self.table_name} b
                 JOIN authors a ON b.author_id = a.id
-                ORDER BY {sort_by}
-                OFFSET :offset LIMIT :limit
+                {order_by_clause}
+                OFFSET :offset {'LIMIT :limit' if limit is not None else ''}
             """
         )
-        result = await self.uow.session.execute(query, {"offset": offset, "limit": limit})
-        return result.fetchall()
+
+        params = {"offset": offset}
+        if limit is not None:
+            params["limit"] = limit
+        result = await self.uow.session.execute(query, params)
+        return result.mappings().all()
 
 
 class AuthorsRepository(PostgresRepository):
@@ -55,7 +76,7 @@ class UsersRepository(PostgresRepository):
         query = text(f"SELECT * FROM {self.table_name} WHERE username = :username")
         result = await self.uow.session.execute(query, {"username": username})
         return result.fetchone()
-    
+
     async def retrieve_by_email(self, email: str):
         query = text(f"SELECT * FROM {self.table_name} WHERE email = :email")
         result = await self.uow.session.execute(query, {"email": email})

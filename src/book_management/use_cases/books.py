@@ -1,10 +1,8 @@
-import csv
-from io import StringIO
-import json
 from typing import Any
 
 from book_management.models import GenreEnum
 from book_management.services.books import FileExporterFactory, FileParserFactory
+from book_management.services.validators import BookQueryValidator
 from exceptions import DoesNotExistError, ValidationError
 from repositories.base import AbstractUnitOfWork
 
@@ -17,7 +15,12 @@ class BaseBooksUseCase:
 class RetrieveBooksUseCase(BaseBooksUseCase):
     async def __call__(self, page: int, per_page: int, sort_by: str) -> dict[str, Any]:
         async with self.uow:
-            books_data = await self.uow.books.get_all(offset=(page - 1) * per_page, limit=per_page, sort_by=sort_by)
+            field, direction = BookQueryValidator.parse_sort_by(sort_by)
+
+            offset = (page - 1) * per_page
+            books_data = await self.uow.books.get_all(
+                offset=offset, limit=per_page, sort_field=field, sort_direction=direction
+            )
             return books_data
 
 
@@ -25,17 +28,17 @@ class CreateBookUseCase(BaseBooksUseCase):
     async def __call__(self, book_data: dict) -> dict[str, Any]:
         async with self.uow:
             author_name = book_data["author_name"]
-            author_id = await self.uow.authors.retrieve_by_name(author_name)
-            print("author_id 11111111", author_id, type(author_id))
+            author = await self.uow.authors.retrieve_by_name(author_name)
+            print("author_id 11111111", author, type(author))
 
-            if not author_id:
-                author_id = await self.uow.authors.create({"name": author_name})
-            print("author_id 22222222", author_id, type(author_id))
+            if not author:
+                author = await self.uow.authors.create({"name": author_name})
+            print("author_id 22222222", author, type(author))
 
             book = await self.uow.books.create(
                 {
                     "title": book_data["title"],
-                    "author_id": author_id.id,  # ?
+                    "author_id": author.id,  # ?
                     "genre": book_data["genre"].upper(),
                     "published_year": book_data["published_year"],
                 }
@@ -44,7 +47,7 @@ class CreateBookUseCase(BaseBooksUseCase):
             return {
                 "id": book.id,
                 "title": book.title,
-                "author_name": author_id.name,
+                "author_name": author.name,
                 "genre": book.genre,
                 "published_year": book.published_year,
             }
@@ -57,19 +60,18 @@ class RetrieveBookUseCase(BaseBooksUseCase):
 
             if not book:
                 raise DoesNotExistError()
-                
+
             return {
                 "id": book.id,
                 "title": book.title,
                 "author_name": book.author.name,
                 "genre": book.genre,
                 "published_year": book.published_year,
-            } 
+            }
 
 
 class UpdateBookUseCase(BaseBooksUseCase):
     async def __call__(self, book_id: int, book_data: dict) -> dict[str, Any] | None:
-
         async with self.uow:
             author_name = book_data["author_name"]
             author = await self.uow.authors.retrieve_by_name(author_name)
@@ -144,6 +146,7 @@ class BulkImportBooksUseCase(BaseBooksUseCase):
             new_author_names = author_names - set(author_map.keys())
             if new_author_names:
                 new_authors = await self.uow.authors.bulk_create([{"name": name} for name in new_author_names])
+                print("new_authors", new_authors)
                 author_map.update({author.name: author for author in new_authors})
 
             books_to_create = [
@@ -164,8 +167,9 @@ class BulkImportBooksUseCase(BaseBooksUseCase):
                 "failed_info": failed_info,
             }
 
+
 class ExportBooksUseCase(BaseBooksUseCase):
-    async def __call__(self, format: str) :
+    async def __call__(self, format: str):
         async with self.uow:
             books = await self.uow.books.get_all(offset=0, limit=1000)
             print("books88888888888", books)

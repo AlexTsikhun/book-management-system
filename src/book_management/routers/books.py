@@ -1,9 +1,9 @@
 import io
+
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from fastapi.responses import StreamingResponse
 
 from auth.schemas import UserResponse
-from auth.services import get_active_current_user
 from book_management.schemas.books import BookBulkImportResponse, BookCreateSchema, BookResponseSchema
 from book_management.use_cases.books import (
     BulkImportBooksUseCase,
@@ -17,7 +17,6 @@ from book_management.use_cases.books import (
 from dependencies import get_current_user, get_unit_of_work
 
 router = APIRouter(prefix="/books", tags=["books"])
-
 
 
 @router.get("/export")
@@ -42,11 +41,12 @@ async def export_books(
         headers={"Content-Disposition": f"attachment; filename=books_export.{file_extension}"},
     )
 
+
 @router.get("/", response_model=list[BookResponseSchema])
 async def retrieve_books(
     page: int = 1,
     per_page: int = 10,
-    sort_by: str = "title",
+    sort_by: str = "title:asc",
     uow=Depends(get_unit_of_work),
 ):
     use_case = RetrieveBooksUseCase(uow)
@@ -98,10 +98,12 @@ async def delete_book(
 async def bulk_import_books(
     file: UploadFile = File(...),
     uow=Depends(get_unit_of_work),
-    current_user: UserResponse = Depends(get_current_user),
+    # current_user: UserResponse = Depends(get_current_user),
 ):
     if file.content_type not in ["text/csv", "application/json"]:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Please ensure the file is in JSON or CSV format.")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Please ensure the file is in JSON or CSV format."
+        )
 
     content = await file.read()
     file_content = content.decode()

@@ -47,7 +47,7 @@ class PostgresRepository(AbstractRepository):
         await self.uow.session.execute(query, {"id": reference})
 
     async def bulk_create(self, data: list[dict]) -> list[dict]:
-        """ Create multiple rows at once """
+        """Create multiple rows at once"""
         if not data:
             return []
 
@@ -72,9 +72,9 @@ class PostgresRepository(AbstractRepository):
         )
 
         result = await self.uow.session.execute(query, params)
-        return result.scalars().all()
+        return result.fetchall()
 
-    async def get_all(self, offset: int, limit: int, sort_by: str="id") -> list[dict]:
+    async def get_all(self, offset: int, limit: int, sort_by: str = "id") -> list[dict]:
         query = text(
             f"""
             SELECT * FROM {self.table_name}
