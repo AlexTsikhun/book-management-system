@@ -2,7 +2,8 @@ from sqlalchemy import Column, Integer, String, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql.sqltypes import DateTime
 
-Base = declarative_base()
+from book_management import Base
+
 
 class User(Base):
     __tablename__ = "users"

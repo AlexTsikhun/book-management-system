@@ -7,8 +7,11 @@ from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
-from book_management.models import Base as BookBase
-from auth.models import Base as AuthBase
+
+from book_management import Base
+from book_management.models import Author, Book
+from auth.models import User
+
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -19,7 +22,7 @@ config = context.config
 fileConfig(config.config_file_name)  # type: ignore
 
 # add your model's MetaData object here
-target_metadata = [BookBase.metadata, AuthBase.metadata]
+target_metadata = Base.metadata
 
 
 def get_url():
