@@ -37,7 +37,7 @@ class CreateBookUseCase(BaseBooksUseCase):
                 {
                     "title": book_data["title"],
                     "author_id": author.id,  # ?
-                    "genre": book_data["genre"].upper(),
+                    "genre": book_data["genre"],
                     "published_year": book_data["published_year"],
                 }
             )
@@ -150,7 +150,7 @@ class BulkImportBooksUseCase(BaseBooksUseCase):
                 {
                     "title": book_data["title"],
                     "author_id": author_map[book_data["author_name"]].id,
-                    "genre": book_data["genre"].upper(),
+                    "genre": book_data["genre"],
                     "published_year": book_data["published_year"],
                 }
                 for book_data in valid_books_data

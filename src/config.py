@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "your-secret-key"
     ALLOWED_GENRES: list = ["Fiction", "Non-Fiction", "Science", "History"]
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 3000000
 
 
 settings = Settings()

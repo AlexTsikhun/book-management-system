@@ -15,21 +15,20 @@ class BaseAuthUseCase:
 class RegisterUserUseCase(BaseAuthUseCase):
     async def __call__(self, user_data: dict) -> dict:
         async with self.uow:
-            existing_user = await self.uow.users.retrieve_by_username(user_data.username)
+            existing_user = await self.uow.users.retrieve_by_username(user_data["username"])
             if existing_user:
                 raise ValidationError("username", "Username already exists")
 
-            existing_email = await self.uow.users.retrieve_by_email(user_data.email)
+            existing_email = await self.uow.users.retrieve_by_email(user_data["email"])
             if existing_email:
                 raise ValidationError("email", "Email already exists")
 
-            hashed_password = get_password_hash(user_data.password)
+            hashed_password = get_password_hash(user_data["password"])
             return await self.uow.users.create(
                 {
-                    "username": user_data.username,
-                    "email": user_data.email,
+                    "username": user_data["username"],
+                    "email": user_data["email"],
                     "hashed_password": hashed_password,
-                    "created_at": datetime.now(timezone.utc),
                     "is_active": True,
                 }
             )
