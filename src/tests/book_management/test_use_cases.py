@@ -1,22 +1,20 @@
 from datetime import datetime, timezone
+
 import pytest
 
-from book_management.models import GenreEnum
+from book_management.models import Genre
 from book_management.use_cases.books import CreateBookUseCase, DeleteBookUseCase, RetrieveBookUseCase, UpdateBookUseCase
 from exceptions import DoesNotExistError
 from repositories.fake.containers import FakeUnitOfWork
+
 
 class BaseBookTestCase:
     @pytest.fixture(autouse=True)
     async def setup(self):
         self.uow = FakeUnitOfWork()
-        
+
         # Create test author
-        self.test_author = {
-            "id": 1,
-            "name": "Test Author",
-            "created_at": datetime.now(timezone.utc)
-        }
+        self.test_author = {"id": 1, "name": "Test Author", "created_at": datetime.now(timezone.utc)}
         await self.uow.authors.create(self.test_author)
 
         # Create test book
@@ -24,8 +22,8 @@ class BaseBookTestCase:
             "id": 1,
             "title": "Test Book",
             "author_id": self.test_author["id"],
-            "genre": GenreEnum.FICTION,
-            "published_year": 2024
+            "genre": Genre.FICTION,
+            "published_year": 2024,
         }
         await self.uow.books.create(self.test_book)
 
@@ -34,9 +32,10 @@ class BaseBookTestCase:
         return {
             "title": "New Test Book",
             "author_id": self.test_author["id"],
-            "genre": GenreEnum.FICTION,
-            "published_year": 2024
+            "genre": Genre.FICTION,
+            "published_year": 2024,
         }
+
 
 class TestCreateBookUseCase(BaseBookTestCase):
     async def test_create_book(self):

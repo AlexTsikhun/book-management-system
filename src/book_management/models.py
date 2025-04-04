@@ -6,8 +6,7 @@ from sqlalchemy.orm import relationship
 from book_management import Base
 
 
-
-class GenreEnum(enum.Enum):  # ?
+class Genre(str, enum.Enum):
     FICTION = "Fiction"
     NON_FICTION = "Non-Fiction"
     SCIENCE = "Science"
@@ -27,7 +26,7 @@ class Book(Base):
     id = Column(Integer, primary_key=True)
     title = Column(String, nullable=False)
     author_id = Column(Integer, ForeignKey("authors.id"), nullable=False)
-    genre = Column(Enum(GenreEnum), nullable=False)
+    genre = Column(Enum(Genre), nullable=False)
     published_year = Column(Integer, nullable=False)
 
     author = relationship("Author", back_populates="books")
