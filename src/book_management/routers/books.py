@@ -5,6 +5,7 @@ from fastapi.responses import StreamingResponse
 
 from auth.schemas import UserResponse
 from book_management.schemas.books import BookBulkImportResponse, BookCreateSchema, BookResponseSchema
+from book_management.services.books import FileParserFactory
 from book_management.use_cases.books import (
     BulkImportBooksUseCase,
     CreateBookUseCase,
@@ -15,6 +16,9 @@ from book_management.use_cases.books import (
     UpdateBookUseCase,
 )
 from dependencies import get_current_user, get_unit_of_work
+from pydantic import ValidationError as PydanticValidationError
+
+from exceptions import ValidationError
 
 router = APIRouter(prefix="/books", tags=["books"])
 
@@ -98,7 +102,7 @@ async def delete_book(
 async def bulk_import_books(
     file: UploadFile = File(...),
     uow=Depends(get_unit_of_work),
-    # current_user: UserResponse = Depends(get_current_user),
+    current_user: UserResponse = Depends(get_current_user),
 ):
     if file.content_type not in ["text/csv", "application/json"]:
         raise HTTPException(
@@ -108,5 +112,31 @@ async def bulk_import_books(
     content = await file.read()
     file_content = content.decode()
 
+    parser = FileParserFactory.get_parser(file.filename)
+    try:
+        books_data = parser.parse(file_content)
+    except ValueError as error:
+        raise ValidationError("file", f"File parsing error: {str(error)}")
+    except TypeError:
+        raise ValidationError("file", "Missing required field")
+
+    valid_books = []
+    failed_info = []
+    for book_data in books_data:
+        try:
+            book = BookCreateSchema(**book_data)
+            valid_books.append(book.model_dump())
+        except PydanticValidationError as error:
+            failed_info.append({"data": book_data, "error": str(error)})
+
     use_case = BulkImportBooksUseCase(uow)
-    return await use_case(file_content, file.filename)
+    result = await use_case(valid_books)
+
+    return {
+        "total_items": len(books_data),
+        "successful": result["successful"],
+        "failed": len(failed_info),
+        "failed_info": failed_info,
+    }
+
+

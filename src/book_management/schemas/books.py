@@ -2,11 +2,13 @@ from datetime import datetime
 
 from pydantic import BaseModel, field_validator
 
+from book_management.models import Genre
+
 
 class BaseBookSchema(BaseModel):
     title: str
     author_name: str
-    genre: str
+    genre: Genre
     published_year: int
 
 

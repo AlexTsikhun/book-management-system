@@ -1,3 +1,5 @@
+from typing import Iterable
+
 from sqlalchemy import text
 
 from auth.models import User
@@ -63,7 +65,7 @@ class AuthorsRepository(PostgresRepository):
         result = await self.uow.session.execute(query, {"name": author_name})
         return result.fetchone()
 
-    async def retrieve_by_names(self, author_names: list[str]):
+    async def retrieve_by_names(self, author_names: Iterable[str]):
         query = text(f"SELECT * FROM {self.table_name} WHERE name = ANY(:names)")
         result = await self.uow.session.execute(query, {"names": author_names})
         return result.fetchall()

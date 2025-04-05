@@ -1,9 +1,9 @@
 from typing import Any
 
-from book_management.models import GenreEnum
-from book_management.services.books import FileExporterFactory, FileParserFactory
+from book_management.models import Genre
+from book_management.services.books import FileExporterFactory
 from book_management.services.validators import BookQueryValidator
-from exceptions import DoesNotExistError, ValidationError
+from exceptions import DoesNotExistError
 from repositories.base import AbstractUnitOfWork
 
 
@@ -104,41 +104,15 @@ class DeleteBookUseCase(BaseBooksUseCase):
 
 
 class BulkImportBooksUseCase(BaseBooksUseCase):
-    async def __call__(self, file_content: str, filename: str) -> dict[str, Any]:
+    async def __call__(self, valid_books: list) -> dict[str, Any]:
         async with self.uow:
-            parser = FileParserFactory.get_parser(filename)
-            try:
-                books_data = parser.parse(file_content)
-            except ValueError as error:
-                raise ValidationError("file", f"File parsing error: {str(error)}")
-            except TypeError:
-                raise ValidationError("file", "Missing required field")
-
-            imported_books = []
-            failed_info = []
-            required_fields = ["title", "author_name", "genre", "published_year"]
-
-            valid_books_data = []
-            author_names = set()
-            for book_data in books_data:
-                if not all(field in book_data for field in required_fields):
-                    missing_fields = [f for f in required_fields if f not in book_data]
-                    failed_info.append(
-                        {"data": book_data, "error": f"Missing required fields: {', '.join(missing_fields)}"}
-                    )
-                    continue
-                valid_books_data.append(book_data)
-                author_names.add(book_data["author_name"])
-
-            if not valid_books_data:
+            if not valid_books:
                 return {
-                    "total_items": len(books_data),
                     "successful": 0,
-                    "failed": len(failed_info),
-                    "failed_info": failed_info,
                 }
 
-            existing_authors = await self.uow.authors.retrieve_by_names(list(author_names))
+            author_names = {book_data["author_name"] for book_data in valid_books}
+            existing_authors = await self.uow.authors.retrieve_by_names(author_names)
             author_map = {author.name: author for author in existing_authors}
 
             new_author_names = author_names - set(author_map.keys())
@@ -153,15 +127,12 @@ class BulkImportBooksUseCase(BaseBooksUseCase):
                     "genre": book_data["genre"],
                     "published_year": book_data["published_year"],
                 }
-                for book_data in valid_books_data
+                for book_data in valid_books
             ]
             imported_books = await self.uow.books.bulk_create(books_to_create)
 
             return {
-                "total_items": len(books_data),
                 "successful": len(imported_books),
-                "failed": len(failed_info),
-                "failed_info": failed_info,
             }
 
 
@@ -175,7 +146,7 @@ class ExportBooksUseCase(BaseBooksUseCase):
                     "id": book.id,
                     "title": book.title,
                     "author_name": book.author_name,
-                    "genre": book.genre.value if isinstance(book.genre, GenreEnum) else book.genre,
+                    "genre": book.genre.value if isinstance(book.genre, Genre) else book.genre,
                     "published_year": book.published_year,
                 }
                 for book in books
