@@ -9,6 +9,7 @@ A FastAPI-based REST API for managing books and authors with authentication, pag
 - [Task](#task)
 - [Installation](#installation)
 - [Run with docker](#run-with-docker)
+- [Run migrations](#run-migrations)
 - [Run tests](#run-tests)
 - [Getting access](#getting-access)
 - [Tech Stack](#tech-stack)
@@ -55,7 +56,7 @@ docker compose exec app bash -c "PYTHONPATH=\$PYTHONPATH:src alembic upgrade hea
 Add path to `.env` files for test configuration
 
 ```bash
-pytest tests/
+PYTHONPATH=$PYTHONPATH:src pytest --asyncio-mode=auto -sv
 ```
 (At the moment, we are reworking the tests in order to correctly use the asynchronous test postgress database)
 
@@ -86,6 +87,7 @@ pytest tests/
 - PostgreSQL database with SQLAlchemy ORM
 - Docker containerization
 - Comprehensive test coverage
+- Recomendation system (based on TF-IDF vectorization algorithm)
 
 
 ### Documentation
@@ -108,8 +110,6 @@ Swager docs image:
 <details style="border: 1px solid #ccc; padding: 10px; margin-bottom: 10px">
 <summary style="font-size: 1.17em; font-weight: bold; ">Future work</summary>
 
-- Add more tests, refactor it
-- Add recomendation system
 - Deploy to AWS
 
 </details>
