@@ -2,6 +2,7 @@ from typing import Any
 
 from book_management.models import Genre
 from book_management.services.books import FileExporterFactory
+from book_management.services.recommendation import RecommendationService
 from book_management.services.validators import BookQueryValidator
 from exceptions import DoesNotExistError
 from repositories.base import AbstractUnitOfWork
@@ -154,3 +155,36 @@ class ExportBooksUseCase(BaseBooksUseCase):
 
             exporter = FileExporterFactory.get_exporter(format)
             return exporter.export(books_data)
+
+
+class RecommendBooksUseCase(BaseBooksUseCase):
+    async def __call__(self, book_id: int, limit: int = 5) -> list[dict[str, Any]]:
+        async with self.uow:
+            books = await self.uow.books.get_all(offset=0, limit=1000)
+            if not books:
+                raise DoesNotExistError()
+
+            target_book = await self.uow.books.retrieve(book_id)
+            if not target_book:
+                raise DoesNotExistError(f"Book with id {book_id} does not exist")
+
+            book_texts = [f"{book.title} {book.genre} {book.author_name}" for book in books]
+            target_text = f"{target_book.title} {target_book.genre} {target_book.author_name}"
+            book_ids = [book.id for book in books]
+
+            recommendation_service = RecommendationService()
+            recommended_ids = recommendation_service.get_recommendations(target_text, book_texts, book_ids, limit)
+
+            recommendations = [
+                {
+                    "id": book.id,
+                    "title": book.title,
+                    "author_name": book.author_name,
+                    "genre": book.genre,
+                    "published_year": book.published_year,
+                }
+                for book in books
+                if book.id in recommended_ids
+            ]
+
+            return recommendations

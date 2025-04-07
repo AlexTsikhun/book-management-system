@@ -2,6 +2,7 @@ import io
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from fastapi.responses import StreamingResponse
+from pydantic import ValidationError as PydanticValidationError
 
 from auth.schemas import UserResponse
 from book_management.schemas.books import BookBulkImportResponse, BookCreateSchema, BookResponseSchema
@@ -11,13 +12,12 @@ from book_management.use_cases.books import (
     CreateBookUseCase,
     DeleteBookUseCase,
     ExportBooksUseCase,
+    RecommendBooksUseCase,
     RetrieveBooksUseCase,
     RetrieveBookUseCase,
     UpdateBookUseCase,
 )
 from dependencies import get_current_user, get_unit_of_work
-from pydantic import ValidationError as PydanticValidationError
-
 from exceptions import ValidationError
 
 router = APIRouter(prefix="/books", tags=["books"])
@@ -54,8 +54,7 @@ async def retrieve_books(
     uow=Depends(get_unit_of_work),
 ):
     use_case = RetrieveBooksUseCase(uow)
-    books_data = await use_case(page=page, per_page=per_page, sort_by=sort_by)
-    return books_data
+    return await use_case(page=page, per_page=per_page, sort_by=sort_by)
 
 
 @router.post("/", response_model=BookResponseSchema)
@@ -140,3 +139,12 @@ async def bulk_import_books(
     }
 
 
+@router.get("/recommendations/{book_id}", response_model=list[BookResponseSchema])
+async def recommend_books(
+    book_id: int,
+    limit: int = 5,
+    uow=Depends(get_unit_of_work),
+    current_user: UserResponse = Depends(get_current_user),
+):
+    use_case = RecommendBooksUseCase(uow)
+    return await use_case(book_id=book_id, limit=limit)
