@@ -24,7 +24,7 @@ class RegisterUserUseCase(BaseAuthUseCase):
                 raise ValidationError("email", "Email already exists")
 
             hashed_password = get_password_hash(user_data["password"])
-            return await self.uow.users.create(
+            user = await self.uow.users.create(
                 {
                     "username": user_data["username"],
                     "email": user_data["email"],
@@ -32,6 +32,14 @@ class RegisterUserUseCase(BaseAuthUseCase):
                     "is_active": True,
                 }
             )
+            return {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
+                "is_active": user.is_active,
+                "created_at": user.created_at,
+                "last_login": user.last_login,
+            }
 
 
 class AuthenticateUserUseCase(BaseAuthUseCase):

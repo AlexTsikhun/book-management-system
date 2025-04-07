@@ -9,12 +9,12 @@ from repositories.base import AbstractUnitOfWork
 
 
 class BaseBooksUseCase:
-    def __init__(self, uow: AbstractUnitOfWork) -> None:  # ?
+    def __init__(self, uow: AbstractUnitOfWork) -> None:
         self.uow = uow
 
 
 class RetrieveBooksUseCase(BaseBooksUseCase):
-    async def __call__(self, page: int, per_page: int, sort_by: str) -> dict[str, Any]:
+    async def __call__(self, page: int, per_page: int, sort_by: str) -> list[dict[str, Any]]:
         async with self.uow:
             field, direction = BookQueryValidator.parse_sort_by(sort_by)
 
@@ -22,7 +22,18 @@ class RetrieveBooksUseCase(BaseBooksUseCase):
             books_data = await self.uow.books.get_all(
                 offset=offset, limit=per_page, sort_field=field, sort_direction=direction
             )
-            return books_data
+
+            book_list = [
+                {
+                    "id": book["id"],
+                    "title": book["title"],
+                    "author_name": book["author_name"],
+                    "genre": book["genre"],
+                    "published_year": book["published_year"],
+                }
+                for book in books_data
+            ]
+            return book_list
 
 
 class CreateBookUseCase(BaseBooksUseCase):
@@ -37,7 +48,7 @@ class CreateBookUseCase(BaseBooksUseCase):
             book = await self.uow.books.create(
                 {
                     "title": book_data["title"],
-                    "author_id": author.id,  # ?
+                    "author_id": author.id,
                     "genre": book_data["genre"],
                     "published_year": book_data["published_year"],
                 }
@@ -63,7 +74,7 @@ class RetrieveBookUseCase(BaseBooksUseCase):
             return {
                 "id": book.id,
                 "title": book.title,
-                "author_name": book.author.name,
+                "author_name": book.author_name,
                 "genre": book.genre,
                 "published_year": book.published_year,
             }
@@ -72,7 +83,7 @@ class RetrieveBookUseCase(BaseBooksUseCase):
 class UpdateBookUseCase(BaseBooksUseCase):
     async def __call__(self, book_id: int, book_data: dict) -> dict[str, Any] | None:
         async with self.uow:
-            author_name = book_data["author_name"]
+            author_name = book_data.pop("author_name")
             author = await self.uow.authors.retrieve_by_name(author_name)
 
             if not author:

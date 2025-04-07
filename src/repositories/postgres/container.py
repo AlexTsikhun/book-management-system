@@ -1,31 +1,30 @@
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import sessionmaker
 
-from config import settings
 from repositories.base import AbstractUnitOfWork
 from repositories.postgres.books import AuthorsRepository, BooksRepository, UsersRepository
 
-engine = create_async_engine(settings.DATABASE_URL, echo=True, future=True)
-async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
-
 
 class PostgresUnitOfWork(AbstractUnitOfWork):
-    def __init__(self):
-        self.session: AsyncSession = None
-        self.books = None
-        self.authors = None
-        self.users = None
+    def __init__(self, engine=None):
+        self._engine = engine
+        self._session_factory = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+        self.session = None
 
-    async def __aenter__(self):  # ???
-        self.session = async_session()
         self.books = BooksRepository(self)
         self.authors = AuthorsRepository(self)
         self.users = UsersRepository(self)
+
+    async def __aenter__(self):
+        if not hasattr(self, "session") or self.session is None:
+            self.session = self._session_factory()
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        if exc_type is not None:
-            await self.session.rollback()
-        else:
-            await self.session.commit()
-        await self.session.close()
+        if hasattr(self, "_session_factory") and self.session:
+            if exc_type is not None:
+                await self.session.rollback()
+            else:
+                await self.session.commit()
+            await self.session.close()
+            self.session = None
