@@ -23,7 +23,7 @@ A FastAPI-based REST API for managing books and authors with authentication, pag
 ```bash
 git clone https://github.com/AlexTsikhun/book-management-system
 cd book-management-system
-
+# SET ENV VARS, see `.env.sample` 
 ```
 
 ## Run with docker
