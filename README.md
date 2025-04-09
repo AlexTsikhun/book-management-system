@@ -58,7 +58,6 @@ Add path to `.env` files for test configuration
 ```bash
 PYTHONPATH=$PYTHONPATH:src pytest --asyncio-mode=auto -sv
 ```
-(At the moment, we are reworking the tests in order to correctly use the asynchronous test postgress database)
 
 ## Getting access
 
@@ -87,7 +86,7 @@ PYTHONPATH=$PYTHONPATH:src pytest --asyncio-mode=auto -sv
 - PostgreSQL database with SQLAlchemy ORM
 - Docker containerization
 - Comprehensive test coverage
-- Recomendation system (based on TF-IDF vectorization algorithm)
+- Recommendation system (based on TF-IDF vectorization algorithm)
 
 
 ### Documentation
@@ -110,6 +109,6 @@ Swager docs image:
 <details style="border: 1px solid #ccc; padding: 10px; margin-bottom: 10px">
 <summary style="font-size: 1.17em; font-weight: bold; ">Future work</summary>
 
-- Deploy to AWS
+- Deploy to AWS (When the Tests will be written that will fully cover the project)
 
 </details>

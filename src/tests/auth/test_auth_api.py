@@ -64,7 +64,7 @@ class TestAuthAPI(BaseAPITest):
         user_data = {
             "username": "shortpass",
             "email": "short@example.com",
-            "password": "short",  # Менше 8 символів
+            "password": "short",
         }
         response = await client.post("/auth/register", json=user_data)
         assert response.status_code == 422
