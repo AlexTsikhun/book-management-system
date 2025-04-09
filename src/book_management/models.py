@@ -26,7 +26,7 @@ class Book(Base):
     id = Column(Integer, primary_key=True)
     title = Column(String, nullable=False)
     author_id = Column(Integer, ForeignKey("authors.id"), nullable=False)
-    genre = Column(Enum(Genre), nullable=False)
+    genre = Column(Enum(Genre, native_enum=False), nullable=False)
     published_year = Column(Integer, nullable=False)
 
     author = relationship("Author", back_populates="books")

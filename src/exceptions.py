@@ -25,3 +25,7 @@ class InvalidSortParameterError(ValidationError):
 
     def __init__(self, field: str = "sort_by", message: str = None) -> None:
         super().__init__(field, message or self.default_message)
+
+
+class InvalidUserStateError(BaseDetailException):
+    default_detail = "Invalid user state."
