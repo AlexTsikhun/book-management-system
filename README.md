@@ -2,6 +2,8 @@
 
 ## Test task for Come Back Agency
 
+[![codecov](https://codecov.io/gh/AlexTsikhun/book-management-system/branch/main/graph/badge.svg)](https://codecov.io/gh/AlexTsikhun/book-management-system)
+
 A FastAPI-based REST API for managing books and authors with authentication, pagination, and sorting capabilities.
 
 ## Table of Contents

@@ -26,25 +26,7 @@ jobs:
         run: |
           pytest --cov=./ --cov-report=html --cov-report=xml
 
-      - name: Extract coverage percentage
-        id: coverage
-        run: |
-          python -c "import xmltodict; with open('coverage.xml') as f: doc = xmltodict.parse(f.read()); coverage = float(doc['coverage']['@line-rate']) * 100; print(f'COVERAGE={int(coverage)}%')" >> $GITHUB_ENV
-
-      - name: Update README with coverage badge
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: |
-          sed -i "s|!\[Coverage\](https://img.shields.io/badge/coverage-[0-9]\+%25-[a-z]\+)|![Coverage](https://img.shields.io/badge/coverage-${COVERAGE}-green)|" README.md
-          git config --global user.name 'GitHub Action'
-          git config --global user.email 'action@github.com'
-          git add README.md
-          git commit -m "Update coverage badge" || echo "No changes to commit"
-          git push
-
-      - name: Deploy to GitHub Pages
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: peaceiris/actions-gh-pages@v4
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./htmlcov
-          
+          token: ${{ secrets.CODECOV_TOKEN }}

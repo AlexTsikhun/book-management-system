@@ -16,7 +16,7 @@ application = FastAPI(
     title="Book Management Application API",
     root_path="/api/v1",
     lifespan=lifespan,
-    dependencies=[Depends(RateLimiter(times=5, seconds=60))],
+    dependencies=[Depends(RateLimiter(times=500, seconds=60))],
 )
 
 application.include_router(books.router)

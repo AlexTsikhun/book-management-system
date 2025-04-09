@@ -1,9 +1,11 @@
-import fakeredis.aioredis
 import pytest_asyncio
+import redis.asyncio as redis_async
 from fastapi_limiter import FastAPILimiter
+from fastapi_limiter.depends import RateLimiter
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import create_async_engine
 from testcontainers.postgres import PostgresContainer
+from testcontainers.redis import RedisContainer
 
 from book_management import Base
 from dependencies import get_current_user, get_unit_of_work
@@ -43,12 +45,22 @@ async def uow(async_engine):
     await uow.__aexit__(None, None, None)
 
 
+@pytest_asyncio.fixture(scope="session")
+def redis_container():
+    with RedisContainer(image="redis:alpine") as redis_container:
+        yield redis_container
+
+
 @pytest_asyncio.fixture(loop_scope="function", scope="function", autouse=True)
-async def setup_limiter():
-    redis = fakeredis.aioredis.FakeRedis()
-    await FastAPILimiter.init(redis)
+async def setup_limiter(redis_container):
+    host = redis_container.get_container_host_ip()
+    port = redis_container.get_exposed_port("6379")
+    redis_url = f"redis://{host}:{port}"
+
+    redis_client = redis_async.Redis.from_url(redis_url, decode_responses=True)
+    await FastAPILimiter.init(redis_client)
     yield
-    await redis.close()
+    await FastAPILimiter.close()
 
 
 @pytest_asyncio.fixture(loop_scope="function", scope="function")
@@ -66,12 +78,6 @@ def mock_current_user():
 def override_dependencies(mock_current_user, uow):
     application.dependency_overrides[get_unit_of_work] = lambda: uow
     application.dependency_overrides[get_current_user] = lambda: mock_current_user
+    application.dependency_overrides[RateLimiter] = lambda: None
     yield
     application.dependency_overrides.clear()
-
-
-# @pytest.fixture
-# def override_uow(uow):
-#     application.dependency_overrides[get_unit_of_work] = lambda: uow
-#     yield
-#     application.dependency_overrides.clear()
